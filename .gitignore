@@ -1,1 +1,51 @@
+# Virtual Environment
 venv/
+.venv/
+
+# Environment Variables
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Pytest
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# ChromaDB
+chroma_db/
+
+# LangSmith (later)
+.langsmith/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Build Files
+build/
+dist/
+*.egg-info/
+
+# Temporary Files
+temp/
+tmp/
+
+data/documents/*.pdf
+data/documents/*.txt

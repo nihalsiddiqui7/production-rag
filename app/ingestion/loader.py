@@ -1,5 +1,10 @@
 from pathlib import Path
+from unittest import loader
 from langchain_community.document_loaders import PyPDFLoader
+
+from langchain_community.document_loaders import TextLoader
+
+
 
 
 class PDFLoader:
@@ -11,8 +16,11 @@ class PDFLoader:
             raise FileNotFoundError(f"File {self.pdf_path} does not exist.")
         
 
-        loader = PyPDFLoader(self.pdf_path)
+        # loader = PyPDFLoader(self.pdf_path)
 
+        # documents = loader.load()
+
+        loader = TextLoader(self.pdf_path)
         documents = loader.load()
         return documents
     
