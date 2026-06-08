@@ -47,5 +47,4 @@ dist/
 temp/
 tmp/
 
-data/documents/*.pdf
-data/documents/*.txt
+data/
