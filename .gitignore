@@ -47,4 +47,5 @@ dist/
 temp/
 tmp/
 
-data/
+data/documents
+
