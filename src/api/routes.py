@@ -17,11 +17,7 @@ from src.api.cache import (
 
 router = APIRouter()
 
-@router.post("/ask", 
-            response_model=QueryResponse
-    )
 
-@limiter.limit("10/minute")
 
 @router.get("/health")
 def health():
@@ -30,6 +26,12 @@ def health():
     }
 
 
+@limiter.limit("10/minute")
+
+
+@router.post("/ask", 
+            response_model=QueryResponse
+    )
 
 def ask(request: Request, payload: QueryRequest):
     try:
