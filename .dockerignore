@@ -9,3 +9,4 @@ logs/
 notebooks/
 data/
 chroma_db/
+.vscode/
