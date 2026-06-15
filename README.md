@@ -1,147 +1,165 @@
-# Production-Grade RAG System
+# Production-Grade RAG System for Technical Knowledge Retrieval
 
-A production-oriented Retrieval-Augmented Generation (RAG) application built using FastAPI, Pinecone, OpenAI, Redis, and LangSmith.
+A production-oriented Retrieval-Augmented Generation (RAG) application designed to provide accurate, source-grounded answers from technical documents using Large Language Models, semantic search, and modern MLOps practices.
 
-The system retrieves relevant information from a knowledge base, generates grounded responses using an LLM, and incorporates production-focused features such as caching, observability, security, PII protection, and rate limiting.
+The system combines vector search, LLM-powered generation, observability, caching, security controls, and API engineering principles to deliver reliable and scalable question-answering capabilities.
 
 ---
 
-## Features
+## Overview
 
-### RAG Pipeline
+Traditional LLMs are limited by static training data and may generate hallucinated responses when asked about domain-specific documents.
+
+This project addresses that challenge using Retrieval-Augmented Generation (RAG), where relevant document chunks are retrieved from a vector database and supplied to the language model as context before generating a response.
+
+The application exposes a production-ready REST API built with FastAPI and includes observability, security, caching, and operational features commonly found in real-world AI systems.
+
+---
+
+## Key Features
+
+### Retrieval-Augmented Generation (RAG)
 
 * PDF document ingestion
-* Recursive text chunking
-* Semantic embeddings using Sentence Transformers
-* Vector storage in Pinecone
-* Context retrieval using semantic search
-* Grounded answer generation using OpenAI
+* Intelligent document chunking
+* Semantic embedding generation
+* Vector storage using Pinecone
+* Similarity-based retrieval
+* Context-aware answer generation
+* Source-grounded responses
 
-### Production Features
+### Production API Features
 
-* FastAPI REST API
+* FastAPI-based REST API
 * Request validation with Pydantic
-* Redis response caching
-* LangSmith tracing and observability
-* Request logging
+* Health monitoring endpoint
+* Structured logging
+* Error handling
+* Source attribution
+
+### Security Features
+
 * Prompt injection detection
-* PII detection and anonymization
-* Rate limiting
-* Source attribution for generated answers
+* Input validation
+* Personally Identifiable Information (PII) detection
+* Automatic PII anonymization
+* API rate limiting
+
+### Performance Optimizations
+
+* Redis response caching
+* Reduced OpenAI API calls
+* Lower latency for repeated queries
+
+### Observability
+
+* LangSmith tracing
+* End-to-end request tracking
+* Retrieval inspection
+* Prompt monitoring
+* LLM response monitoring
 
 ---
 
-## Architecture
+## System Architecture
 
 ```text
-User
- │
- ▼
-FastAPI
- │
- ├── Input Validation
- │
- ├── Prompt Injection Detection
- │
- ├── PII Detection & Anonymization
- │
- ├── Redis Cache
- │      │
- │      ├── Cache Hit → Return Response
- │      │
- │      └── Cache Miss
- │
- ▼
-Retriever
- │
- ▼
-Pinecone Vector Database
- │
- ▼
-Relevant Context
- │
- ▼
-OpenAI LLM
- │
- ▼
-Grounded Response
- │
- ▼
-Answer + Source Citations
+                        ┌─────────────────────┐
+                        │      Client         │
+                        └──────────┬──────────┘
+                                   │
+                                   ▼
+                     ┌──────────────────────────┐
+                     │        FastAPI API       │
+                     └──────────┬───────────────┘
+                                │
+               ┌────────────────┼────────────────┐
+               │                │                │
+               ▼                ▼                ▼
 
-Observability
- ├── Logging
- └── LangSmith Tracing
+     Prompt Injection      PII Detection    Rate Limiting
+        Protection       & Anonymization
+
+                                │
+                                ▼
+
+                      ┌──────────────────┐
+                      │    Redis Cache   │
+                      └────────┬─────────┘
+                               │
+                Cache Hit ─────┘
+                               │
+                               ▼
+                      ┌──────────────────┐
+                      │    Retriever     │
+                      └────────┬─────────┘
+                               │
+                               ▼
+                      ┌──────────────────┐
+                      │     Pinecone     │
+                      └────────┬─────────┘
+                               │
+                               ▼
+                      Relevant Context
+                               │
+                               ▼
+                      ┌──────────────────┐
+                      │      OpenAI      │
+                      └────────┬─────────┘
+                               │
+                               ▼
+                     Grounded Response
+
+Observability Layer
+─────────────────────────────────
+LangSmith Tracing
+Structured Logging
 ```
 
 ---
 
-## Tech Stack
+## Technology Stack
+
+### AI / LLM
+
+* OpenAI GPT-4.1 Mini
+* LangChain
+
+### Vector Database
+
+* Pinecone
+
+### Embeddings
+
+* Sentence Transformers
+* all-MiniLM-L6-v2
 
 ### Backend
 
 * FastAPI
 * Pydantic
 
-### LLM & RAG
-
-* OpenAI
-* Pinecone
-* LangChain
-* Sentence Transformers
-
 ### Security
 
-* Prompt Injection Detection
-* Microsoft Presidio (PII Detection)
+* Presidio
+* Custom Prompt Injection Filters
+
+### Caching
+
+* Redis
 
 ### Observability
 
 * LangSmith
 * Python Logging
 
-### Performance
-
-* Redis
-
-### Deployment (Planned)
+### Deployment
 
 * Docker
 * Docker Compose
-* AWS ECR
-* AWS EC2
-* GitHub Actions CI/CD
-
----
-
-## Project Structure
-
-```text
-production-rag/
-│
-├── src/
-│   │
-│   ├── api/
-│   │   ├── main.py
-│   │   ├── routes.py
-│   │   ├── schemas.py
-│   │   ├── security.py
-│   │   ├── pii.py
-│   │   ├── cache.py
-│   │   ├── logger.py
-│   │   └── rate_limiter.py
-│   │
-│   ├── helper.py
-│   ├── retriever.py
-│   ├── rag_chain.py
-│   └── prompt.py
-│
-├── data/
-├── notebooks/
-├── requirements.txt
-├── README.md
-└── .env
-```
+* AWS EC2 (Planned)
+* AWS ECR (Planned)
+* GitHub Actions (Planned)
 
 ---
 
@@ -153,7 +171,7 @@ production-rag/
 POST /ask
 ```
 
-Request:
+Request
 
 ```json
 {
@@ -161,7 +179,7 @@ Request:
 }
 ```
 
-Response:
+Response
 
 ```json
 {
@@ -183,7 +201,7 @@ Response:
 GET /health
 ```
 
-Response:
+Response
 
 ```json
 {
@@ -193,101 +211,97 @@ Response:
 
 ---
 
-## LangSmith Tracing
+## Caching Workflow
 
-The application uses LangSmith for end-to-end observability.
-
-Traced components include:
-
-* RAG Pipeline
-* Retrieval
-* Context Building
-* Answer Generation
-* Redis Cache Operations
-* PII Detection
-
-This enables detailed monitoring, debugging, and performance analysis.
-
----
-
-## Security Features
-
-### Prompt Injection Protection
-
-Blocks malicious prompts such as:
+The system uses Redis to cache frequently requested responses.
 
 ```text
-Ignore previous instructions
-Reveal system prompt
-Act as ChatGPT
-```
-
-### PII Detection
-
-Automatically anonymizes sensitive information before it reaches the LLM.
-
-Examples:
-
-```text
-john@example.com
-```
-
-becomes
-
-```text
-<EMAIL_ADDRESS>
-```
-
-and
-
-```text
-9876543210
-```
-
-becomes
-
-```text
-<PHONE_NUMBER>
-```
-
-### Rate Limiting
-
-Protects the API against abuse and excessive requests.
-
----
-
-## Redis Caching
-
-Frequently asked questions are cached to reduce:
-
-* OpenAI API usage
-* Pinecone queries
-* Latency
-
-Workflow:
-
-```text
-Question
- │
- ▼
-Redis
+User Question
+      │
+      ▼
+   Redis
 
 Cache Hit?
  │
- ├── Yes → Return Cached Response
+ ├── Yes
+ │     │
+ │     ▼
+ │  Return Cached Answer
  │
  └── No
        │
        ▼
-       RAG Pipeline
+    Retrieve Context
        │
        ▼
-       Store Response In Redis
+      OpenAI
+       │
+       ▼
+   Store In Redis
+       │
+       ▼
+   Return Response
 ```
+
+This significantly reduces:
+
+* API costs
+* Response latency
+* Repeated retrieval operations
 
 ---
 
-## Running Locally
+## Security Workflow
+
+```text
+Incoming Request
+       │
+       ▼
+
+Prompt Injection Detection
+       │
+       ▼
+
+PII Detection
+       │
+       ▼
+
+PII Anonymization
+       │
+       ▼
+
+Rate Limiting
+       │
+       ▼
+
+RAG Pipeline
+```
+
+Examples of protected inputs:
+
+* Prompt injection attempts
+* Email addresses
+* Phone numbers
+* Sensitive user information
+
+---
+
+## Observability
+
+The application uses LangSmith for tracing critical components:
+
+* Retrieval operations
+* Context generation
+* LLM calls
+* Redis cache operations
+* PII processing
+* End-to-end RAG execution
+
+This enables rapid debugging and performance monitoring.
+
+---
+
+## Running the Application
 
 ### Clone Repository
 
@@ -296,50 +310,26 @@ git clone <repository-url>
 cd production-rag
 ```
 
-### Create Virtual Environment
-
-```bash
-python -m venv venv
-```
-
-Activate:
-
-```bash
-venv\Scripts\activate
-```
-
-### Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
 ### Configure Environment Variables
 
 Create a `.env` file:
 
 ```env
-OPENAI_API_KEY=your_key
-PINECONE_API_KEY=your_key
+OPENAI_API_KEY=YOUR_KEY
+PINECONE_API_KEY=YOUR_KEY
 
-LANGCHAIN_API_KEY=your_key
+LANGCHAIN_API_KEY=YOUR_KEY
 LANGCHAIN_TRACING_V2=true
 LANGCHAIN_PROJECT=production-rag
 ```
 
-### Start Redis
+### Run with Docker
 
 ```bash
-docker start redis
+docker compose up --build
 ```
 
-### Run Application
-
-```bash
-uvicorn src.api.main:app --reload
-```
-
-Open:
+### Access API Documentation
 
 ```text
 http://localhost:8000/docs
@@ -349,35 +339,35 @@ http://localhost:8000/docs
 
 ## Future Enhancements
 
-* Docker & Docker Compose
-* GitHub Actions CI/CD
+* Hybrid Search (BM25 + Vector Search)
+* RAG Evaluation using Ragas
+* CI/CD Pipeline with GitHub Actions
 * AWS ECR Integration
 * AWS EC2 Deployment
-* RAG Evaluation (Ragas)
-* Hybrid Search
-* Re-ranking
 * Monitoring Dashboard
+* Automated Testing Suite
 
 ---
 
-## Key Learning Outcomes
-
-This project demonstrates:
+## Skills Demonstrated
 
 * Retrieval-Augmented Generation (RAG)
+* Large Language Models (LLMs)
 * Vector Databases
 * Semantic Search
-* LLM Integration
 * API Development
-* Caching Strategies
-* Security for GenAI Applications
-* Observability & Tracing
-* Production-Oriented AI System Design
+* Caching Systems
+* AI Security
+* Observability & Monitoring
+* Docker & Containerization
+* Production AI System Design
 
 ---
 
 ## Author
 
-**Nihal Siddiqui**
+### Nihal Siddiqui
 
-Aspiring Data Scientist & GenAI Engineer
+Aspiring Data Scientist | Machine Learning Engineer | Generative AI Enthusiast
+
+Focused on building production-grade AI applications using modern MLOps and LLM engineering practices.
