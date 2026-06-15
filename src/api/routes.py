@@ -22,6 +22,15 @@ router = APIRouter()
     )
 
 @limiter.limit("10/minute")
+
+@router.get("/health")
+def health():
+    return {
+        "status": "healthy"
+    }
+
+
+
 def ask(request: Request, payload: QueryRequest):
     try:
         logger.info(f"Received question: {payload.question}")
