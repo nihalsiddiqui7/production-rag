@@ -18,6 +18,7 @@ redis_client = redis.Redis(
     decode_responses=True
 )
 
+
 @traceable(name="cache_get")
 def get_cached_answer(question: str):
 
