@@ -1,5 +1,6 @@
 import re
 from fastapi import HTTPException
+from langsmith import traceable
 
 
 SUSPICIOUS_PATTERNS = [
@@ -21,7 +22,7 @@ SUSPICIOUS_PATTERNS = [
     r"system message"
 ]
 
-
+@traceable
 def validate_prompt(question: str):
 
     text = question.lower()

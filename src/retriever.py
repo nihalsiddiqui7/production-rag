@@ -1,9 +1,13 @@
+import os
+
 from dotenv import load_dotenv
 load_dotenv()
+from pinecone import Pinecone
 
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 
+pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
 INDEX_NAME = "ml-chatbot"
 

@@ -21,7 +21,7 @@ llm = ChatOpenAI(
     temperature=0
 )
 
-@traceable(name="rag-pipeline")
+@traceable
 def ask_question(question):
 
     docs = retriever.invoke(question)

@@ -6,6 +6,8 @@ from src.api.logger import logger
 from src.api.security import validate_prompt
 from src.api.pii import anonymize_pii
 from fastapi import Request
+
+from langsmith import traceable
 from src.api.rate_limiter import limiter
 import json
 from src.api.cache import (
@@ -32,7 +34,7 @@ def health():
 @router.post("/ask", 
             response_model=QueryResponse
     )
-
+@traceable(name="full-pipeline")
 def ask(request: Request, payload: QueryRequest):
     try:
         logger.info(f"Received question: {payload.question}")
