@@ -75,7 +75,7 @@
 #     return embeddings, cleaned_texts, metadata
 
 
-
+from config import CHUNK_SIZE, CHUNK_OVERLAP
 from typing import List
 import re
 
@@ -254,8 +254,8 @@ def split_docs(docs: List[Document]) -> List[Document]:
     """
 
     splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=CHUNK_OVERLAP
     )
 
     chunks = splitter.split_documents(

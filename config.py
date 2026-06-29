@@ -10,5 +10,5 @@ BASE_DIR = Path(__file__).resolve().parent
 DOCUMENTS_DIR = BASE_DIR / "data" / "documents"
 
 #3. CHUNK SETTINGS
-CHUNK_SIZE = 1000  # Number of characters per chunk
-CHUNK_OVERLAP = 200  # Number of characters to overlap between chunks
+CHUNK_SIZE = 800 # Number of characters per chunk
+CHUNK_OVERLAP = 170  # Number of characters to overlap between chunks

@@ -1,6 +1,7 @@
 from annotated_types import doc
 from dotenv import load_dotenv
 from langsmith import traceable
+from opentelemetry import context
 load_dotenv()
 
 from langchain_openai import ChatOpenAI
@@ -26,7 +27,7 @@ def ask_question(question):
 
     docs = retriever.invoke(question)
 
-    context = "\n\n".join(
+    contexts = "\n\n".join(
         doc.page_content
         for doc in docs
     )
@@ -35,13 +36,15 @@ def ask_question(question):
     #     print(doc.page_content[:500])
 
     final_prompt = RAG_PROMPT.format(
-        context=context,
+        context=contexts,
         question=question
     )
 
     response = llm.invoke(final_prompt)
 
     return {
+        "question": question,
+        "contexts": contexts,
         "answer": response.content,
         "sources":[
             {

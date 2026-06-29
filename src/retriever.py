@@ -9,6 +9,7 @@ from langchain_pinecone import PineconeVectorStore
 
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
 
+
 INDEX_NAME = "ml-chatbot"
 
 embedding_model = HuggingFaceEmbeddings(
