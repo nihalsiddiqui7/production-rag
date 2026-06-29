@@ -120,6 +120,10 @@ Structured Logging
 
 ## Technology Stack
 
+## RAG EVALUATION
+* Used langgraph for both observability and evaluation
+* 
+
 ### AI / LLM
 
 * OpenAI GPT-4.1 Mini
@@ -298,6 +302,46 @@ The application uses LangSmith for tracing critical components:
 * End-to-end RAG execution
 
 This enables rapid debugging and performance monitoring.
+
+
+## 📊 RAG Evaluation & Observability
+
+To ensure the reliability and quality of the Retrieval-Augmented Generation (RAG) system, an offline evaluation pipeline was implemented using **LangSmith** and **OpenEvals**.
+
+Each experiment is automatically benchmarked against a curated evaluation dataset containing in-domain, multi-hop, out-of-scope, and adversarial queries. This enables objective comparison of different retrieval and prompting strategies before deployment.
+
+### Evaluation Metrics
+
+The following metrics are tracked for every experiment:
+
+* ✅ **Correctness** – Measures factual correctness of the generated response against reference answers.
+* ✅ **Groundedness** – Verifies that every generated claim is supported by the retrieved context.
+* ✅ **Retrieval Relevance** – Evaluates whether the retriever returned the most relevant document chunks.
+* ✅ **Helpfulness** – Measures how effectively the response satisfies the user's question.
+* ✅ **Conciseness** – Evaluates whether answers are clear and appropriately concise.
+* ✅ **Latency & Token Usage** – Tracks inference performance and API cost.
+
+### Experiment Tracking
+
+Different retrieval configurations (chunk size, retrieval strategy, Top-K, prompts, etc.) can be evaluated and compared side-by-side using LangSmith Experiments, making it easy to identify the highest-performing configuration before deployment.
+
+### Evaluation Dashboard
+
+<p align="center">
+  <img src="assets/Evaluation-Dashboard.png" width="900"/>
+</p>
+
+**Current Evaluation Summary**
+
+| Metric              |    Score |
+| ------------------- | -------: |
+| Correctness         | **0.80** |
+| Groundedness        | **0.93** |
+| Retrieval Relevance | **0.9(shows less in the image due to out of context questions aslo being evaluated)** |
+| Helpfulness         | **0.78** |
+| Conciseness         | **0.60** |
+
+> The evaluation dataset contains a mix of definition-based, comparison, multi-hop, out-of-scope, and prompt-injection queries to assess both retrieval quality and answer generation robustness.
 
 ---
 
