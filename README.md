@@ -20,98 +20,98 @@ The application exposes a production-ready REST API built with FastAPI and inclu
 
 ### Retrieval-Augmented Generation (RAG)
 
-* PDF document ingestion
-* Intelligent document chunking
-* Semantic embedding generation
-* Vector storage using Pinecone
-* Similarity-based retrieval
-* Context-aware answer generation
-* Source-grounded responses
+- PDF document ingestion
+- **Hierarchical parent-child chunking** — small child chunks for precise semantic retrieval, parent chunks for rich generation context
+- Semantic embedding generation
+- Vector storage using Pinecone
+- Similarity-based retrieval
+- Context-aware answer generation
+- Source-grounded responses
 
 ### Production API Features
 
-* FastAPI-based REST API
-* Request validation with Pydantic
-* Health monitoring endpoint
-* Structured logging
-* Error handling
-* Source attribution
+- FastAPI-based REST API
+- Request validation with Pydantic
+- Health monitoring endpoint
+- Structured logging
+- Error handling
+- Source attribution
 
 ### Security Features
 
-* Prompt injection detection
-* Input validation
-* Personally Identifiable Information (PII) detection
-* Automatic PII anonymization
-* API rate limiting
+- Prompt injection detection
+- Input validation
+- Personally Identifiable Information (PII) detection
+- Automatic PII anonymization
+- API rate limiting
 
 ### Performance Optimizations
 
-* Redis response caching
-* Reduced OpenAI API calls
-* Lower latency for repeated queries
+- Redis response caching
+- Reduced OpenAI API calls
+- Lower latency for repeated queries
 
 ### Observability
 
-* LangSmith tracing
-* End-to-end request tracking
-* Retrieval inspection
-* Prompt monitoring
-* LLM response monitoring
+- LangSmith tracing
+- End-to-end request tracking
+- Retrieval inspection
+- Prompt monitoring
+- LLM response monitoring
 
 ---
 
 ## System Architecture
 
-```text
-                        ┌─────────────────────┐
-                        │      Client         │
-                        └──────────┬──────────┘
-                                   │
-                                   ▼
-                     ┌──────────────────────────┐
-                     │        FastAPI API       │
-                     └──────────┬───────────────┘
-                                │
-               ┌────────────────┼────────────────┐
-               │                │                │
-               ▼                ▼                ▼
+```
+                        +---------------------+
+                        |      Client         |
+                        +----------+----------+
+                                   |
+                                   v
+                     +--------------------------+
+                     |        FastAPI API       |
+                     +----------+---------------+
+                                |
+               +----------------+----------------+
+               |                |                |
+               v                v                v
 
      Prompt Injection      PII Detection    Rate Limiting
         Protection       & Anonymization
 
-                                │
-                                ▼
+                                |
+                                v
 
-                      ┌──────────────────┐
-                      │    Redis Cache   │
-                      └────────┬─────────┘
-                               │
-                Cache Hit ─────┘
-                               │
-                               ▼
-                      ┌──────────────────┐
-                      │    Retriever     │
-                      └────────┬─────────┘
-                               │
-                               ▼
-                      ┌──────────────────┐
-                      │     Pinecone     │
-                      └────────┬─────────┘
-                               │
-                               ▼
+                      +------------------+
+                      |    Redis Cache   |
+                      +--------+---------+
+                               |
+                Cache Hit -----+
+                               |
+                               v
+                      +------------------+
+                      |    Retriever     |
+                      +--------+---------+
+                               |
+                               v
+                      +------------------+
+                      |     Pinecone     |
+                      +--------+---------+
+                               |
+                               v
                       Relevant Context
-                               │
-                               ▼
-                      ┌──────────────────┐
-                      │      OpenAI      │
-                      └────────┬─────────┘
-                               │
-                               ▼
+                               |
+                               v
+                      +------------------+
+                      |      OpenAI      |
+                      +--------+---------+
+                               |
+                               v
                      Grounded Response
 
 Observability Layer
-─────────────────────────────────
+---------------------------------
 LangSmith Tracing
 Structured Logging
 ```
@@ -122,44 +122,44 @@ Structured Logging
 
 ### AI / LLM
 
-* OpenAI GPT-4.1 Mini
-* LangChain
+- OpenAI GPT-4.1 Mini
+- LangChain
 
 ### Vector Database
 
-* Pinecone
+- Pinecone
 
 ### Embeddings
 
-* Sentence Transformers
-* all-MiniLM-L6-v2
+- Sentence Transformers
+- all-MiniLM-L6-v2
 
 ### Backend
 
-* FastAPI
-* Pydantic
+- FastAPI
+- Pydantic
 
 ### Security
 
-* Presidio
-* Custom Prompt Injection Filters
+- Presidio
+- Custom Prompt Injection Filters
 
 ### Caching
 
-* Redis
+- Redis
 
 ### Observability
 
-* LangSmith
-* Python Logging
+- LangSmith
+- Python Logging
 
 ### Deployment
 
-* Docker
-* Docker Compose
-* AWS EC2 (Planned)
-* AWS ECR (Planned)
-* GitHub Actions (Planned)
+- Docker
+- Docker Compose
+- AWS EC2 (Planned)
+- AWS ECR (Planned)
+- GitHub Actions (Planned)
 
 ---
 
@@ -171,7 +171,7 @@ Structured Logging
 POST /ask
 ```
 
-Request
+**Request**
 
 ```json
 {
@@ -179,7 +179,7 @@ Request
 }
 ```
 
-Response
+**Response**
 
 ```json
 {
@@ -201,7 +201,7 @@ Response
 GET /health
 ```
 
-Response
+**Response**
 
 ```json
 {
@@ -211,78 +211,90 @@ Response
 
 ---
 
+## Chunking Strategy
+
+The system uses **parent-child hierarchical chunking** for optimal retrieval and generation:
+
+- **Child chunks** (small, precise) — embedded and indexed in Pinecone for high-accuracy semantic retrieval
+- **Parent chunks** (larger, contextual) — stored as full document sections and returned as context to the LLM
+- **Mapping** — each child chunk maps back to its parent, ensuring the LLM receives rich, coherent context while retrieval stays precise
+
+This approach balances retrieval precision with generation quality, a pattern used in production RAG systems by companies like SAP and MongoDB.
+
+---
+
 ## Caching Workflow
 
 The system uses Redis to cache frequently requested responses.
 
-```text
+```
 User Question
-      │
-      ▼
+      |
+      v
    Redis
 
 Cache Hit?
- │
- ├── Yes
- │     │
- │     ▼
- │  Return Cached Answer
- │
- └── No
-       │
-       ▼
+ |
+ +-- Yes
+ |     |
+ |     v
+ |  Return Cached Answer
+ |
+ +-- No
+       |
+       v
     Retrieve Context
-       │
-       ▼
+       |
+       v
       OpenAI
-       │
-       ▼
+       |
+       v
    Store In Redis
-       │
-       ▼
+       |
+       v
    Return Response
 ```
 
 This significantly reduces:
 
-* API costs
-* Response latency
-* Repeated retrieval operations
+- API costs
+- Response latency
+- Repeated retrieval operations
 
 ---
 
 ## Security Workflow
 
-```text
+```
 Incoming Request
-       │
-       ▼
+       |
+       v
 
 Prompt Injection Detection
-       │
-       ▼
+       |
+       v
 
 PII Detection
-       │
-       ▼
+       |
+       v
 
 PII Anonymization
-       │
-       ▼
+       |
+       v
 
 Rate Limiting
-       │
-       ▼
+       |
+       v
 
 RAG Pipeline
 ```
 
 Examples of protected inputs:
 
-* Prompt injection attempts
-* Email addresses
-* Phone numbers
-* Sensitive user information
+- Prompt injection attempts
+- Email addresses
+- Phone numbers
+- Sensitive user information
 
 ---
 
@@ -290,12 +302,12 @@ Examples of protected inputs:
 
 The application uses LangSmith for tracing critical components:
 
-* Retrieval operations
-* Context generation
-* LLM calls
-* Redis cache operations
-* PII processing
-* End-to-end RAG execution
+- Retrieval operations
+- Context generation
+- LLM calls
+- Redis cache operations
+- PII processing
+- End-to-end RAG execution
 
 This enables rapid debugging and performance monitoring.
 
@@ -331,7 +343,7 @@ docker compose up --build
 
 ### Access API Documentation
 
-```text
+```
 http://localhost:8000/docs
 ```
 
@@ -339,28 +351,27 @@ http://localhost:8000/docs
 
 ## Future Enhancements
 
-* Hybrid Search (BM25 + Vector Search)
-* RAG Evaluation using Ragas
-* CI/CD Pipeline with GitHub Actions
-* AWS ECR Integration
-* AWS EC2 Deployment
-* Monitoring Dashboard
-* Automated Testing Suite
+- Hybrid Search (BM25 + Vector Search)
+- CI/CD Pipeline with GitHub Actions
+- AWS ECR Integration
+- AWS EC2 Deployment
+- Monitoring Dashboard
+- Automated Testing Suite
 
 ---
 
 ## Skills Demonstrated
 
-* Retrieval-Augmented Generation (RAG)
-* Large Language Models (LLMs)
-* Vector Databases
-* Semantic Search
-* API Development
-* Caching Systems
-* AI Security
-* Observability & Monitoring
-* Docker & Containerization
-* Production AI System Design
+- Retrieval-Augmented Generation (RAG)
+- Large Language Models (LLMs)
+- Vector Databases
+- Semantic Search
+- API Development
+- Caching Systems
+- AI Security
+- Observability & Monitoring
+- Docker & Containerization
+- Production AI System Design
 
 ---
 
@@ -368,6 +379,6 @@ http://localhost:8000/docs
 
 ### Nihal Siddiqui
 
-Aspiring Data Scientist | Machine Learning Engineer | Generative AI Enthusiast
+AI/ML Engineer | Generative AI Enthusiast
 
 Focused on building production-grade AI applications using modern MLOps and LLM engineering practices.
