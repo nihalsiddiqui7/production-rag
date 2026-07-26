@@ -50,7 +50,7 @@ if __name__ == "__main__":
         groundedness,
         retrieval_relevance,
     ],
-    experiment_prefix="CHUNK_SIZE_800_OVERLAP_170",
+    experiment_prefix="Parent_Child_RAG_Eval",
 )
 
     print(results)

@@ -49,7 +49,7 @@ EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Child search settings
 K_CHILDREN = 10       # how many child chunks to retrieve
-MAX_PARENTS = 3       # how many unique parents to return to LLM
+MAX_PARENTS = 3     # how many unique parents to return to LLM
 
 
 # ═══════════════════════════════════════════════════════════════
