@@ -12,3 +12,7 @@ DOCUMENTS_DIR = BASE_DIR / "data" / "documents"
 #3. CHUNK SETTINGS
 CHUNK_SIZE = 800 # Number of characters per chunk
 CHUNK_OVERLAP = 170  # Number of characters to overlap between chunks
+PARENT_CHUNK_SIZE = 1600  # Number of characters per parent chunk
+PARENT_CHUNK_OVERLAP = 340  # Number of characters to overlap between parent chunks
+CHILD_CHUNK_SIZE = 400  # Number of characters per child chunk
+CHILD_CHUNK_OVERLAP = 85  # Number of characters to overlap between child chunks

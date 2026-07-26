@@ -1,16 +1,13 @@
-from annotated_types import doc
 from dotenv import load_dotenv
 from langsmith import traceable
-from opentelemetry import context
-load_dotenv()
-
 from langchain_openai import ChatOpenAI
 
 from src.retriever import retriever
 from src.prompt import RAG_PROMPT
-from langsmith import traceable
 
 import os
+
+load_dotenv()
 
 print("API KEY:", bool(os.getenv("LANGSMITH_API_KEY")))
 print("TRACING:", os.getenv("LANGSMITH_TRACING"))
@@ -22,51 +19,84 @@ llm = ChatOpenAI(
     temperature=0
 )
 
-@traceable
-def ask_question(question):
 
+@traceable
+def ask_question(question: str) -> dict:
+    """
+    RAG pipeline with parent-child chunking.
+
+    ```
+    Flow:
+        1. Retrieve parent chunks via parent-child retriever
+        2. Format context from parent texts
+        3. Send to LLM with RAG prompt
+        4. Return answer + sources
+
+    The retriever handles the heavy lifting:
+        - Searches child chunks in Pinecone (high recall)
+        - Resolves parent_id → fetches parent text (rich context)
+        - Deduplicates so LLM doesn't see duplicate context
+    ```
+    """
+
+    # 1. Retrieve parent chunks (not children!)
     docs = retriever.invoke(question)
 
-    contexts = "\n\n".join(
+    # 2. Format context from parent texts
+    contexts = "\n\n---\n\n".join(
         doc.page_content
         for doc in docs
     )
-    # for i, doc in enumerate(docs, 1):
-    #     print(f"\n--- Document {i} ---")
-    #     print(doc.page_content[:500])
 
+    # 3. Build prompt
     final_prompt = RAG_PROMPT.format(
         context=contexts,
         question=question
     )
 
+    # 4. Generate answer
     response = llm.invoke(final_prompt)
 
+    # 5. Return structured output
     return {
         "question": question,
         "contexts": contexts,
         "answer": response.content,
-        "sources":[
+        "sources": [
             {
-                "page":doc.metadata.get("page", "Unknown"),
-                "title":doc.metadata.get("title", "Unknown"),
+                "page": doc.metadata.get("page", "Unknown"),
+                "title": doc.metadata.get("title", "Unknown"),
+                "parent_id": doc.metadata.get("parent_id", "Unknown"),
             }
             for doc in docs
         ]
     }
 
 
+# ── Quick test ─────────────────────────────────────────────────
 # if __name__ == "__main__":
 
 #     question = "What is Adam optimizer?"
 
-#     answer = ask_question(question)
+#     result = ask_question(question)
 
-#     print("\nQuestion:")
-#     print(question)
+#     print("\n" + "=" * 60)
+#     print("QUESTION:")
+#     print("=" * 60)
+#     print(result["question"])
 
-#     print("\nAnswer:")
-#     print(answer)
+#     print("\n" + "=" * 60)
+#     print("ANSWER:")
+#     print("=" * 60)
+#     print(result["answer"])
 
-   
+#     print("\n" + "=" * 60)
+#     print("SOURCES:")
+#     print("=" * 60)
+#     for s in result["sources"]:
+#         print(f"  Page {s['page']} | {s['title']} | parent_id={s['parent_id']}")
 
+#     print("\n" + "=" * 60)
+#     print("CONTEXT LENGTH:")
+#     print("=" * 60)
+#     print(f"{len(result['contexts'])} characters")
