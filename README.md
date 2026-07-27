@@ -328,18 +328,18 @@ Different retrieval configurations (chunk size, retrieval strategy, Top-K, promp
 ### Evaluation Dashboard
 
 <p align="center">
-  <img src="assets/Evaluation-Dashboard.png" width="900"/>
+  <img src="assets/rag-evaluation.png" width="900"/>
 </p>
 
 **Current Evaluation Summary**
 
 | Metric              |    Score |
 | ------------------- | -------: |
-| Correctness         | **0.80** |
-| Groundedness        | **0.93** |
+| Correctness         | **0.89** |
+| Groundedness        | **0.98** |
 | Retrieval Relevance | **0.85** |
-| Helpfulness         | **0.78** |
-| Conciseness         | **0.60** |
+| Helpfulness         | **0.94** |
+| Conciseness         | **0.62** |
 
 > The evaluation dataset contains a mix of definition-based, comparison, multi-hop, out-of-scope, and prompt-injection queries to assess both retrieval quality and answer generation robustness.
 
