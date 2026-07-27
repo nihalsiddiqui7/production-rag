@@ -337,7 +337,7 @@ Different retrieval configurations (chunk size, retrieval strategy, Top-K, promp
 | ------------------- | -------: |
 | Correctness         | **0.80** |
 | Groundedness        | **0.93** |
-| Retrieval Relevance | **0.9(shows less in the image due to out of context questions aslo being evaluated)** |
+| Retrieval Relevance | **0.85** |
 | Helpfulness         | **0.78** |
 | Conciseness         | **0.60** |
 
