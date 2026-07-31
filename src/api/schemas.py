@@ -14,7 +14,9 @@ class SourceInfo(BaseModel):
     title: str = Field(
         description="Title of the source document"
     )
-
+    parent_id: str = Field(
+        description="Parent ID of the source document"
+    )
 
 class QueryResponse(BaseModel):
     answer: str = Field(
