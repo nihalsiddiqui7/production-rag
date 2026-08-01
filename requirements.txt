@@ -6,6 +6,7 @@ openai
 langchain
 langchain-core
 langchain-community==0.3.31
+langchain-classic==1.0.7
 langchain-openai
 langchain-pinecone
 langchain-text-splitters
@@ -13,6 +14,7 @@ langsmith
 langchain-huggingface
 
 ragas==0.4.3
+rank_bm25
 pinecone
 
 sentence-transformers

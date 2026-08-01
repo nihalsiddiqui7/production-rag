@@ -1,5 +1,6 @@
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -82,6 +83,7 @@ def main() -> None:
         model="gpt-4.1-mini",
         client=OpenAI(),
         temperature=0,
+        max_tokens=4000,
     )
     evaluator_embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -107,7 +109,9 @@ def main() -> None:
     df = result.to_pandas()
 
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-    csv_path = REPORTS_DIR / "ragas_report.csv"
+    tag = sys.argv[1] if len(sys.argv) > 1 else "eval"
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_path = REPORTS_DIR / f"ragas_report_{tag}_{timestamp}.csv"
     df.to_csv(csv_path, index=False)
 
     print_scores(df, "AVERAGE SCORES (all questions)")
