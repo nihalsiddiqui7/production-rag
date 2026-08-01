@@ -10,9 +10,11 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_pinecone import PineconeVectorStore
 
 # ── 1. Re-process the PDF ───────────────────────────────────
-pdf_path = r"E:\Nihal\RAG_Projects\production_rag\production-rag\data\documents\Hands On Machine Learning with Scikit Learn and TensorFlow.pdf"
+from config import DOCUMENTS_DIR
 
-docs = doc_loader(pdf_path)
+pdf_path = Path(DOCUMENTS_DIR) / "Hands On Machine Learning with Scikit Learn and TensorFlow.pdf"
+
+docs = doc_loader(str(pdf_path))
 docs = clean_docs(docs)
 docs = filter_docs(docs)
 
@@ -20,8 +22,7 @@ pc = parent_child_split_docs(docs)
 print(f"{len(pc.children)} children | {len(pc.parents)} parents")
 
 # ── 2. Save parents locally ─────────────────────────────────
-PARENT_STORE_PATH = Path("data/parent_store.json")
-PARENT_STORE_PATH.parent.mkdir(parents=True, exist_ok=True)
+PARENT_STORE_PATH = Path("parent_store.json")
 
 with open(PARENT_STORE_PATH, "w", encoding="utf-8") as f:
     json.dump(

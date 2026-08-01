@@ -44,7 +44,7 @@ from langchain_core.documents import Document
 #  CONFIG
 # ═══════════════════════════════════════════════════════════════
 INDEX_NAME = "ml-chatbot-v2"          # ← new parent-child index
-PARENT_STORE_PATH = Path("data/parent_store.json")
+PARENT_STORE_PATH = Path("parent_store.json")
 EMBEDDING_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
 
 # Child search settings
