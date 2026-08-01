@@ -8,10 +8,6 @@ load_dotenv()
 from langsmith import traceable
 
 
-import os
-
-print("REDIS_HOST =", os.getenv("REDIS_HOST"))
-
 redis_client = redis.Redis(
     host=os.getenv("REDIS_HOST", "localhost"),
     port=6379,

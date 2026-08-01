@@ -5,14 +5,7 @@ from langchain_openai import ChatOpenAI
 from src.retriever import retriever
 from src.prompt import RAG_PROMPT
 
-import os
-
 load_dotenv()
-
-print("API KEY:", bool(os.getenv("LANGSMITH_API_KEY")))
-print("TRACING:", os.getenv("LANGSMITH_TRACING"))
-print("PROJECT:", os.getenv("LANGSMITH_PROJECT"))
-
 
 llm = ChatOpenAI(
     model="gpt-4.1-mini",
@@ -64,7 +57,7 @@ def ask_question(question: str) -> dict:
         "answer": response.content,
         "sources": [
             {
-                "page": doc.metadata.get("page", "Unknown"),
+                "page": int(doc.metadata.get("page", 0) or 0),
                 "title": doc.metadata.get("title", "Unknown"),
                 "parent_id": doc.metadata.get("parent_id", "Unknown"),
             }

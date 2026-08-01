@@ -28,12 +28,10 @@ def health():
     }
 
 
-@limiter.limit("10/minute")
-
-
-@router.post("/ask", 
+@router.post("/ask",
             response_model=QueryResponse
     )
+@limiter.limit("10/minute")
 @traceable(name="full-pipeline")
 def ask(request: Request, payload: QueryRequest):
     try:
@@ -60,6 +58,8 @@ def ask(request: Request, payload: QueryRequest):
     
 
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error occurred while processing question: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")
