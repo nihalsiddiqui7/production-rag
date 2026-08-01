@@ -2,11 +2,53 @@
 
 > A source-grounded question-answering API for machine-learning knowledge, built with FastAPI, Pinecone, parent-child retrieval, OpenAI, Redis, Presidio, LangSmith, Docker, and Ragas.
 
-This project is an end-to-end example of taking a basic RAG prototype and hardening it into a service with explicit retrieval design, evaluation, security controls, caching, observability, and operational boundaries.
+![Python 3.11](https://img.shields.io/badge/python-3.11-3776AB)
+![FastAPI](https://img.shields.io/badge/FastAPI-API-009688)
+![Pinecone](https://img.shields.io/badge/Pinecone-vector%20db-3B82F6)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-The system answers questions from *Hands-On Machine Learning with Scikit-Learn and TensorFlow*. It does not ask the model to rely on its general training knowledge. The generation prompt requires answers to come only from retrieved context and returns a controlled refusal when the documents do not contain the answer.
+This project takes a RAG prototype and hardens it into a service with explicit retrieval design, evaluation, security controls, caching, observability, and operational boundaries. It answers questions from *Hands-On Machine Learning with Scikit-Learn and TensorFlow* without asking the model to rely on its general training knowledge: the generation prompt requires answers to come only from retrieved context, and the system returns a controlled refusal when the documents do not contain the answer.
 
-## Why This Project
+**Measured quality (in-domain, Ragas):** faithfulness `0.963` - answer relevancy `0.894` - context recall `1.000`. Hybrid retrieval was implemented, A/B tested, and deliberately kept behind a flag after it lost on faithfulness and recall. This README treats what was measured, not what sounds impressive.
+
+## Table of Contents
+
+- [What this is](#what-this-is)
+- [Why this project](#why-this-project)
+- [Architecture](#architecture)
+- [Real output example](#real-output-example)
+- [Core design decisions](#core-design-decisions)
+- [API](#api)
+- [Evaluation](#evaluation)
+- [Local setup](#local-setup)
+- [Delivery workflow](#delivery-workflow)
+- [Document ingestion](#document-ingestion)
+- [Project layout](#project-layout)
+- [Operational verification](#operational-verification)
+- [Known limitations and next improvements](#known-limitations-and-next-improvements)
+- [Skills demonstrated](#skills-demonstrated)
+- [Author](#author)
+
+## What this is
+
+The system answers questions about machine learning with answers grounded in a 564-page textbook:
+
+1. The relevant passages are **retrieved** from a Pinecone vector index.
+2. The passages are fed to `gpt-4.1-mini` with a grounding prompt.
+3. The API returns the **answer plus the exact pages** it was drawn from.
+
+The production wrapper around that loop is the point of this repository:
+
+- FastAPI service with validated request/response contracts
+- Parent-child retrieval that separates search granularity from generation context
+- Prompt-injection defense and Presidio-based PII anonymization tuned for ML jargon
+- Redis response caching with a one-hour TTL
+- LangSmith tracing across the whole pipeline
+- Ragas-based evaluation with timestamped, per-question reports
+- Docker Compose packaging and GitHub Actions CI/CD to Amazon ECR
+
+## Why this project
 
 Many RAG demos stop at:
 
@@ -17,7 +59,7 @@ PDF -> chunks -> embeddings -> vector search -> LLM
 This project focuses on the production questions that appear after the demo works:
 
 - How do we preserve enough context without sending entire documents to the LLM?
-- How do we return citations that a user can inspect?
+- How do we return citations a user can inspect?
 - What happens when the user sends an injection attempt or PII?
 - How do we avoid paying for repeated questions?
 - How do we observe retrieval, generation, and cache behavior?
@@ -34,7 +76,7 @@ This project focuses on the production questions that appear after the demo work
           +----------------+----------------+
           |                |                |
           v                v                v
-    Input validation   Injection check   Rate limit
+    Input validation   Injection check   Rate limit (10/min)
           |
           v
     Presidio PII anonymization
@@ -46,15 +88,15 @@ This project focuses on the production questions that appear after the demo work
           v
     Parent-child retriever
           |
-          +--> Dense: child vectors in Pinecone -> parent chunks
+          +--> Dense: child vectors in Pinecone -> deduplicated parents
           |
-          +--> Optional hybrid: dense + BM25 -> weighted RRF
+          +--> Optional hybrid: dense + BM25 -> weighted RRF -> top 3
           |
           v
     Grounded prompt with retrieved context
           |
           v
-    OpenAI gpt-4.1-mini
+    OpenAI gpt-4.1-mini (temperature 0)
           |
           v
     Answer + page/title/parent_id sources
@@ -62,27 +104,57 @@ This project focuses on the production questions that appear after the demo work
     LangSmith traces the request and major pipeline operations.
 ```
 
-## Core Design Decisions
+## Real output example
+
+The following is verbatim API output captured from a live run. The answer is truncated and the source list is abbreviated for readability.
+
+```json
+{
+  "question": "What is RMSE?",
+  "answer": "RMSE (Root Mean Square Error) is a typical performance measure for regression problems that measures the standard deviation of the errors the system makes in its predictions. It corresponds to the Euclidean norm (l2 norm) and is calculated as the square root of the average of the squared differences between the predicted values and the actual values. For example, an RMSE equal to 50,000 means that about 68% of the system's predictions fall within $50,000 of the actual value, and about 95% fall within $100,000 of the actual value. ...",
+  "sources": [
+    {
+      "page": 58,
+      "title": "Hands-On Machine Learning with Scikit-Learn and TensorFlow",
+      "parent_id": "294c0838-..."
+    },
+    {
+      "page": 60,
+      "title": "Hands-On Machine Learning with Scikit-Learn and TensorFlow",
+      "parent_id": "012dc144-..."
+    },
+    {
+      "page": 128,
+      "title": "Hands-On Machine Learning with Scikit-Learn and TensorFlow",
+      "parent_id": "79a6ef79-..."
+    }
+  ]
+}
+```
+
+The live response contained seven deduplicated source parents across pages 58, 59, 60, 89, and 128. Each source entry carries the page, the document title, and the parent chunk ID, so every claim in an answer can be traced back to the document.
+
+## Core design decisions
 
 ### Parent-child retrieval
 
 Ingestion creates two representations of the source document:
 
-1. Smaller child chunks are embedded and indexed in Pinecone for high-recall semantic search.
-2. Larger parent chunks are stored in `parent_store.json` and returned to the LLM for richer context.
+1. Smaller **child chunks** (400 chars) are embedded and indexed in Pinecone for high-recall semantic search.
+2. Larger **parent chunks** (1600 chars) are stored in `parent_store.json` and returned to the LLM for richer context.
 
-At query time, the retriever searches children, deduplicates results by `parent_id`, and resolves them back to parent text. This separates search granularity from generation context size instead of forcing one chunk size to serve both jobs.
+At query time, the retriever searches children, deduplicates results by `parent_id`, and resolves them back to parent text. This separates search granularity from generation context size instead of forcing one chunk size to serve both jobs. It is the same strategy used by LlamaIndex and production RAG systems.
 
 ### Dense retrieval is the production default
 
-The current default is semantic parent-child retrieval. Hybrid retrieval remains available through an environment switch:
+The production default is semantic parent-child retrieval. Hybrid retrieval remains available through an environment switch:
 
 ```env
 RETRIEVAL_MODE=dense    # default
 RETRIEVAL_MODE=hybrid   # dense + BM25 + weighted RRF
 ```
 
-Hybrid retrieval was evaluated rather than accepted on intuition. On the recorded in-domain comparison, dense retrieval produced:
+Hybrid retrieval was evaluated rather than accepted on intuition. On the recorded in-domain comparison:
 
 | Metric | Dense | Hybrid |
 | --- | ---: | ---: |
@@ -91,9 +163,14 @@ Hybrid retrieval was evaluated rather than accepted on intuition. On the recorde
 | Context precision | 0.739 | **0.769** |
 | Context recall | **1.000** | 0.909 |
 
-Hybrid improved context precision slightly, but BM25 also promoted noisy index/reference pages for queries such as “bagging and boosting”. That demoted useful explanatory context and caused a measurable faithfulness and recall regression. Dense therefore remains the safe default, while hybrid is isolated behind a flag for further tuning.
+Hybrid improved context precision slightly, but BM25 also promoted noisy index/reference pages for queries such as "bagging and boosting". That demoted useful explanatory context and caused a measurable faithfulness and recall regression. Dense therefore remains the safe default, while hybrid is isolated behind a flag for further tuning.
 
 This is an intentional engineering decision: retrieval quality is measured per metric, failure cases are inspected, and the more complex approach is not shipped merely because it sounds more advanced.
+
+The two modes also bound context differently:
+
+- **Dense** returns deduplicated parents bounded by the child search width (`k=10`).
+- **Hybrid** caps the fused result at `MAX_PARENTS=3` before prompt assembly.
 
 ### Grounded generation
 
@@ -109,7 +186,7 @@ The API returns both the answer and source metadata, including page number, docu
 
 - Redis caches sanitized questions and responses for one hour.
 - Cache hits skip both retrieval and the OpenAI generation call.
-- The retriever returns at most three unique parent contexts to control prompt size.
+- Retrieval width and parent caps keep prompt size bounded.
 - Evaluation can be restricted to the in-domain subset instead of spending tokens on refusal-only cases.
 
 ### Security boundaries
@@ -185,7 +262,7 @@ $env:RETRIEVAL_MODE="hybrid"
 venv\Scripts\python.exe -m src.evaluation.run_ragas hybrid in_domain
 ```
 
-The `in_domain` argument focuses the comparison on questions with document-grounded reference answers. Reports are timestamped, for example:
+The `in_domain` argument focuses the comparison on questions with document-grounded reference answers and skips questions that expect a controlled refusal. Reports are timestamped, for example:
 
 ```text
 reports/ragas_report_dense_<timestamp>.csv
@@ -194,7 +271,7 @@ reports/ragas_report_hybrid_<timestamp>.csv
 
 The evaluation uses `gpt-4.1-mini` as both the application generator and Ragas judge. This keeps the setup reproducible and inexpensive, but it is also a known limitation: an independent judge model would provide stronger validation for a production benchmark.
 
-## Local Setup
+## Local setup
 
 ### Prerequisites
 
@@ -240,7 +317,7 @@ docker compose up --build
 
 Compose starts the API on port `8000` and Redis on port `6379`. Inside Compose, use `REDIS_HOST=redis`.
 
-## Delivery Workflow
+## Delivery workflow
 
 GitHub Actions provides two repository workflows on the `deploy` branch:
 
@@ -249,7 +326,7 @@ GitHub Actions provides two repository workflows on the `deploy` branch:
 
 The current automation publishes the image to ECR; it does not claim to provision or restart an EC2/ECS service. That boundary is documented intentionally rather than presenting image publishing as full infrastructure deployment.
 
-## Document Ingestion
+## Document ingestion
 
 The repository expects the source PDF under the configured documents directory. The ingestion script:
 
@@ -267,7 +344,7 @@ venv\Scripts\python.exe store_index.py
 
 The runtime needs both the Pinecone child index and the matching `parent_store.json`. A mismatch between those artifacts can produce missing or incorrect source resolution.
 
-## Project Layout
+## Project layout
 
 ```text
 .
@@ -282,19 +359,19 @@ The runtime needs both the Pinecone child index and the matching `parent_store.j
 |   |   `-- rate_limiter.py  SlowAPI limiter
 |   |-- evaluation/
 |   |   |-- questions.json   Reference evaluation set
-|   |   `-- run_ragas.py    Ragas evaluation and timestamped reports
-|   |-- rag_chain.py        Retrieval, grounded prompt, generation, sources
-|   |-- retriever.py        Dense parent-child and optional hybrid retrieval
-|   `-- prompt.py           Grounding and refusal instructions
-|-- store_index.py          PDF ingestion and Pinecone indexing
-|-- parent_store.json       Runtime parent-chunk lookup store
+|   |   `-- run_ragas.py     Ragas evaluation and timestamped reports
+|   |-- rag_chain.py         Retrieval, grounded prompt, generation, sources
+|   |-- retriever.py         Dense parent-child and optional hybrid retrieval
+|   `-- prompt.py            Grounding and refusal instructions
+|-- store_index.py           PDF ingestion and Pinecone indexing
+|-- parent_store.json        Runtime parent-chunk lookup store
 |-- Dockerfile
 |-- docker-compose.yml
 |-- requirements.txt
 `-- .env.example
 ```
 
-## Operational Verification
+## Operational verification
 
 The API has been smoke-tested for:
 
@@ -308,7 +385,7 @@ The API has been smoke-tested for:
 
 The Ragas reports provide the quality comparison; smoke tests provide service-level confidence. These are deliberately treated as different types of verification.
 
-## Known Limitations and Next Improvements
+## Known limitations and next improvements
 
 This repository is production-oriented, not a claim that every production concern is complete.
 
@@ -320,7 +397,7 @@ This repository is production-oriented, not a claim that every production concer
 - Authentication, tenant isolation, secret management, and distributed rate limiting would be required for a public multi-user deployment.
 - The current Redis key is the sanitized question; a production deployment should include model, prompt, retriever, and document-version identifiers in the cache key.
 
-## Skills Demonstrated
+## Skills demonstrated
 
 - RAG system design beyond a basic vector-search demo
 - Parent-child chunking and source resolution
