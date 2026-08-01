@@ -32,7 +32,7 @@ BM25_WEIGHT = 0.5     # BM25 leg weight in the ensemble (dense gets the rest)
 
 # Retrieval mode: "hybrid" (dense + BM25) or "dense" (semantic only).
 # Useful for A/B evaluation of the hybrid upgrade.
-RETRIEVAL_MODE = os.getenv("RETRIEVAL_MODE", "hybrid").lower()
+RETRIEVAL_MODE = os.getenv("RETRIEVAL_MODE", "dense").lower()
 
 
 # ═══════════════════════════════════════════════════════════════
