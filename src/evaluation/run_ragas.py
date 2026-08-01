@@ -90,6 +90,14 @@ def main() -> None:
     )
 
     questions = load_questions()
+
+    # Optional second arg filters to in-domain questions only (cheaper runs
+    # focused on retrieval quality instead of refusal behavior).
+    if len(sys.argv) > 2 and sys.argv[2] == "in_domain":
+        questions = [
+            q for q in questions if q["answer"] not in OUT_OF_DOMAIN_REFUSAL
+        ]
+
     samples = build_samples(questions)
 
     dataset = EvaluationDataset(samples=samples)
