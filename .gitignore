@@ -38,6 +38,9 @@ chroma_db/
 .coverage
 htmlcov/
 
+# Generated eval reports
+reports/
+
 # Build Files
 build/
 dist/
