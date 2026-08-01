@@ -51,6 +51,7 @@ temp/
 tmp/
 
 data/
+STUDY_PLAN.md
 
 
 .env
